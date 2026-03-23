@@ -58,6 +58,8 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -var-file=env/dev.tfvars -out=plan.tfplan
         working-directory: infra
+        env:
+          TF_VAR_ssh_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
       - name: Upload Plan
         uses: actions/upload-artifact@v4
