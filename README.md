@@ -220,3 +220,20 @@ terraform destroy -var-file=env/dev.tfvars
 
 ## Créditos y material de referencia
 - Azure, Terraform, IaC, LB y VMSS (docs oficiales) — revisa enlaces en clase.
+
+---
+
+## Documentacion del codigo (buenas practicas)
+Este repositorio deja documentacion directamente en Terraform para facilitar mantenimiento y revisiones:
+
+1. Variables con `description` en root y modulos para que `terraform-docs`/lectura manual sea clara.
+2. Outputs con `description` para explicar consumo entre modulos y salidas finales.
+3. Comentarios de arquitectura sobre bloques clave (VNet, NICs, VMs, LB, NSG) sin sobrecomentar.
+4. Recomendacion de seguridad explicita: limitar SSH por CIDR y preferir asociacion de NSG a subred en escenarios productivos.
+
+Checklist rapido al extender el codigo:
+
+- Toda variable nueva debe incluir `description` y, si aplica, `validation`.
+- Todo output nuevo debe explicar para que sirve.
+- Evitar valores hardcodeados no documentados; exponerlos como variables cuando sean de negocio/entorno.
+- Mantener nombres consistentes con `prefix` y etiquetar recursos con `tags`.
