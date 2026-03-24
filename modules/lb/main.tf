@@ -1,3 +1,4 @@
+# IP publica estandar para exponer el frontend del balanceador.
 resource "azurerm_public_ip" "pip" {
   name                = "${var.prefix}-lb-pip"
   location            = var.location
@@ -7,6 +8,7 @@ resource "azurerm_public_ip" "pip" {
   tags                = var.tags
 }
 
+# Load Balancer capa 4 con frontend publico.
 resource "azurerm_lb" "lb" {
   name                = "${var.prefix}-lb"
   location            = var.location
@@ -20,12 +22,13 @@ resource "azurerm_lb" "lb" {
   tags = var.tags
 }
 
+# Pool backend donde se registran las NICs de las VMs.
 resource "azurerm_lb_backend_address_pool" "bepool" {
   name            = "${var.prefix}-bepool"
   loadbalancer_id = azurerm_lb.lb.id
 }
 
-# Asociar NICs al backend pool
+# Asocia todas las NICs backend al pool del balanceador.
 resource "azurerm_network_interface_backend_address_pool_association" "assoc" {
   count                   = length(var.backend_nic_ids)
   network_interface_id    = var.backend_nic_ids[count.index]
@@ -33,6 +36,7 @@ resource "azurerm_network_interface_backend_address_pool_association" "assoc" {
   backend_address_pool_id = azurerm_lb_backend_address_pool.bepool.id
 }
 
+# Health probe para verificar disponibilidad del puerto 80.
 resource "azurerm_lb_probe" "probe" {
   name            = "http-80"
   loadbalancer_id = azurerm_lb.lb.id
@@ -40,6 +44,7 @@ resource "azurerm_lb_probe" "probe" {
   port            = 80
 }
 
+# Regla de balanceo TCP 80 -> 80 usando el probe definido.
 resource "azurerm_lb_rule" "rule" {
   name                           = "http-80"
   loadbalancer_id                = azurerm_lb.lb.id
@@ -51,6 +56,7 @@ resource "azurerm_lb_rule" "rule" {
   probe_id                       = azurerm_lb_probe.probe.id
 }
 
+# NSG para backend web: HTTP abierto y SSH restringido por CIDR.
 resource "azurerm_network_security_group" "nsg" {
   name                = "${var.prefix}-web-nsg"
   location            = var.location
@@ -82,8 +88,8 @@ resource "azurerm_network_security_group" "nsg" {
   tags = var.tags
 }
 
-# Nota: Asociar NSG a la subnet WEB fuera (en módulo vnet) o a cada NIC.
-# Para simplicidad, lo asociamos a las NICs aquí:
+# En este laboratorio el NSG se asocia a NICs para simplificar el wiring.
+# En entornos grandes, evaluar asociacion a subred para gestion centralizada.
 resource "azurerm_network_interface_security_group_association" "nsg_assoc" {
   count                     = length(var.backend_nic_ids)
   network_interface_id      = var.backend_nic_ids[count.index]

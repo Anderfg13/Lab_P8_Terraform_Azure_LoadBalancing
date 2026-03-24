@@ -1,13 +1,49 @@
-variable "resource_group_name" { type = string }
-variable "location" { type = string }
-variable "prefix" { type = string }
-variable "admin_username" { type = string }
-variable "ssh_public_key" { type = string }
-variable "subnet_id" { type = string }
-variable "vm_count" { type = number }
-variable "cloud_init" { type = string }
-variable "tags" { type = map(string) }
+variable "resource_group_name" {
+  type        = string
+  description = "Resource Group donde se despliegan NICs y VMs."
+}
 
+variable "location" {
+  type        = string
+  description = "Region de Azure para los recursos de compute."
+}
+
+variable "prefix" {
+  type        = string
+  description = "Prefijo de nombres para NICs y VMs."
+}
+
+variable "admin_username" {
+  type        = string
+  description = "Usuario administrador configurado en las VMs."
+}
+
+variable "ssh_public_key" {
+  type        = string
+  description = "Clave publica SSH para acceso administrativo seguro."
+}
+
+variable "subnet_id" {
+  type        = string
+  description = "ID de la subred donde se conectaran las NICs de backend."
+}
+
+variable "vm_count" {
+  type        = number
+  description = "Cantidad de VMs Linux a crear."
+}
+
+variable "cloud_init" {
+  type        = string
+  description = "Contenido cloud-init en texto plano para bootstrap de cada VM."
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Tags comunes aplicados a recursos del modulo."
+}
+
+# Una NIC por VM para facilitar asociacion al backend pool del LB.
 resource "azurerm_network_interface" "nic" {
   count               = var.vm_count
   name                = "${var.prefix}-nic-${count.index}"
@@ -22,6 +58,7 @@ resource "azurerm_network_interface" "nic" {
   tags = var.tags
 }
 
+# VMs Linux Ubuntu con cloud-init para instalar y configurar nginx.
 resource "azurerm_linux_virtual_machine" "vm" {
   count               = var.vm_count
   name                = "${var.prefix}-vm-${count.index}"
@@ -55,8 +92,10 @@ resource "azurerm_linux_virtual_machine" "vm" {
 }
 
 output "vm_names" {
-  value = [for v in azurerm_linux_virtual_machine.vm : v.name]
+  description = "Nombres de las VMs Linux creadas."
+  value       = [for v in azurerm_linux_virtual_machine.vm : v.name]
 }
 output "nic_ids" {
-  value = [for n in azurerm_network_interface.nic : n.id]
+  description = "IDs de NICs para asociarlas al backend del LB y al NSG."
+  value       = [for n in azurerm_network_interface.nic : n.id]
 }
