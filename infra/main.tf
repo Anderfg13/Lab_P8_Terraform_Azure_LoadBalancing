@@ -1,10 +1,11 @@
-# Resource Group y wiring de módulos
+# Root module: crea el Resource Group y orquesta la red, cómputo y balanceador.
 resource "azurerm_resource_group" "rg" {
   name     = "${var.prefix}-rg"
   location = var.location
   tags     = var.tags
 }
 
+# Capa de red: VNet y subredes de la solución.
 module "vnet" {
   source              = "../modules/vnet"
   resource_group_name = azurerm_resource_group.rg.name
@@ -13,6 +14,7 @@ module "vnet" {
   tags                = var.tags
 }
 
+# Capa de cómputo: NICs + VMs Linux con aprovisionamiento por cloud-init.
 module "compute" {
   source              = "../modules/compute"
   resource_group_name = azurerm_resource_group.rg.name
@@ -26,6 +28,7 @@ module "compute" {
   tags                = var.tags
 }
 
+# Capa de entrada: Public IP, Load Balancer, NSG y asociaciones a backend.
 module "lb" {
   source              = "../modules/lb"
   resource_group_name = azurerm_resource_group.rg.name

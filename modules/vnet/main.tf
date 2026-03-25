@@ -1,3 +1,4 @@
+# Red principal para la aplicacion.
 resource "azurerm_virtual_network" "vnet" {
   name                = "${var.prefix}-vnet"
   address_space       = ["10.10.0.0/16"]
@@ -6,6 +7,7 @@ resource "azurerm_virtual_network" "vnet" {
   tags                = var.tags
 }
 
+# Subred de carga de trabajo web (VMs backend del LB).
 resource "azurerm_subnet" "web" {
   name                 = "subnet-web"
   resource_group_name  = var.resource_group_name
@@ -13,6 +15,7 @@ resource "azurerm_subnet" "web" {
   address_prefixes     = ["10.10.1.0/24"]
 }
 
+# Subred reservada para administracion/salto (uso opcional).
 resource "azurerm_subnet" "mgmt" {
   name                 = "subnet-mgmt"
   resource_group_name  = var.resource_group_name
