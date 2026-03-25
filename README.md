@@ -3,6 +3,11 @@
 **Duración estimada:** 2–3 horas (base) + 1–2 horas (retos)  
 **Última actualización:** 2025-11-09
 
+**Estudiantes** Anderson fabián García y Juana Lozano Chaves
+
+## Documento:
+https://docs.google.com/document/d/1qrjpxVUYOcqNqeTJc5ehH5chec1xfSx9bpEUeqUm5mQ/edit?usp=sharing
+
 ## Propósito
 Modernizar el laboratorio de balanceo de carga en Azure usando **Terraform** para definir, aprovisionar y versionar la infraestructura. El objetivo es que los estudiantes diseñen y desplieguen una arquitectura reproducible, segura y con buenas prácticas de _IaC_.
 
@@ -189,7 +194,7 @@ El _workflow_ `.github/workflows/terraform.yml`:
 - **Buenas prácticas Terraform (20 pts):** módulos, variables, `fmt/validate`, _remote state_.
 - **Seguridad y costos (15 pts):** SSH por clave, NSG mínimo, tags y _naming_; estimación de costos.
 - **CI/CD (15 pts):** pipeline con `plan` automático y `apply` manual (OIDC).
-- **Documentación y diagramas (10 pts):** README del equipo, diagramas claros y reflexión.
+- **Documentación y diagramas (10 pts):** README del equipo, diagramas claros y reflexión. (ubicados en el documento)
 
 ---
 
@@ -213,8 +218,20 @@ terraform destroy -var-file=env/dev.tfvars
 
 ## Preguntas de reflexión
 - ¿Por qué L4 LB vs Application Gateway (L7) en tu caso? ¿Qué cambiaría?
+
+  Se eligió el LB L4 inicialmente por simplicidad y costo — es suficiente para balancear tráfico HTTP entre VMs idénticas sin necesidad de inspeccionar el contenido. El Application Gateway (L7) añade capacidades que en este lab no eran estrictamente necesarias: routing por rutas URL (/api vs /static), terminación SSL, y WAF. La diferencia clave es que L4 trabaja a nivel de TCP/IP sin ver el contenido HTTP, mientras que L7 entiende el protocolo HTTP y puede tomar decisiones basadas en headers, cookies o rutas. En producción real casi siempre se usaría L7 porque las aplicaciones necesitan HTTPS y routing inteligente.
+
 - ¿Qué implicaciones de seguridad tiene exponer 22/TCP? ¿Cómo mitigarlas?
+  
+  Exponer SSH a internet, incluso restringido a una IP, es un riesgo porque esa IP puede cambiar y porque los ataques de fuerza bruta son constantes en el puerto 22. Las mitigaciones aplicadas en este lab fueron autenticación por llave Ed25519 (sin contraseña) y restricción del NSG a una IP específica en /32. En producción las mejoras serían: usar Azure Bastion para eliminar completamente la exposición del puerto 22, o en su defecto usar una VPN para acceder a la red privada antes de conectarse por SSH.
+
 - ¿Qué mejoras harías si esto fuera **producción**? (resiliencia, autoscaling, observabilidad).
+
+  En resiliencia: reemplazar las VMs fijas por un VM Scale Set con al menos 2 instancias en zonas de disponibilidad distintas, y agregar un Azure Backup para los discos. 
+
+  En autoscaling: configurar reglas de escalado automático basadas en CPU o número de conexiones activas para manejar picos de tráfico sin intervención manual. 
+
+  En observabilidad: además de las alertas de Monitor ya configuradas, agregar Log Analytics Workspace para centralizar logs de nginx, dashboards en Azure Workbooks con métricas de latencia y tasa de errores, y un Budget Alert para controlar costo
 
 ---
 
